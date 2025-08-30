@@ -1,5 +1,6 @@
 C:\JensenCode\JENSEN-SYS\bin\Debug\net9.0\appsettings.Development.json
 C:\JensenCode\JENSEN-SYS\bin\Debug\net9.0\appsettings.json
+C:\JensenCode\JENSEN-SYS\bin\Debug\net9.0\api.staticwebassets.runtime.json
 C:\JensenCode\JENSEN-SYS\bin\Debug\net9.0\api.staticwebassets.endpoints.json
 C:\JensenCode\JENSEN-SYS\bin\Debug\net9.0\api.exe
 C:\JensenCode\JENSEN-SYS\bin\Debug\net9.0\api.deps.json
@@ -157,7 +158,6 @@ C:\JensenCode\JENSEN-SYS\obj\Debug\net9.0\refint\api.dll
 C:\JensenCode\JENSEN-SYS\obj\Debug\net9.0\api.pdb
 C:\JensenCode\JENSEN-SYS\obj\Debug\net9.0\api.genruntimeconfig.cache
 C:\JensenCode\JENSEN-SYS\obj\Debug\net9.0\ref\api.dll
-C:\JensenCode\JENSEN-SYS\bin\Debug\net9.0\api.staticwebassets.runtime.json
-C:\JensenCode\JENSEN-SYS\obj\Debug\net9.0\compressed\wfissnvk2e-ojg87ottx6.gz
-C:\JensenCode\JENSEN-SYS\obj\Debug\net9.0\compressed\cf5m9wqklc-lyt9vg9ohq.gz
-C:\JensenCode\JENSEN-SYS\obj\Debug\net9.0\compressed\5hz7yazoko-smeen2ybgv.gz
+C:\JensenCode\JENSEN-SYS\obj\Debug\net9.0\compressed\cf5m9wqklc-j8028oxact.gz
+C:\JensenCode\JENSEN-SYS\obj\Debug\net9.0\compressed\5hz7yazoko-ff3fezr48k.gz
+C:\JensenCode\JENSEN-SYS\obj\Debug\net9.0\compressed\wfissnvk2e-0p33xvznje.gz

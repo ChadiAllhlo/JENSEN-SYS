@@ -1,8 +1,11 @@
 using api.Data;
 using api.Models;
+using api.ViewModels;
+using Ganss.Xss;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace api.Controllers;
@@ -14,6 +17,7 @@ public class TodosController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly UserManager<User> _userManager;
+    private readonly HtmlSanitizer _htmlSanitizer = new();
 
     public TodosController(AppDbContext context, UserManager<User> userManager)
     {
@@ -58,14 +62,16 @@ public class TodosController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Todo>> CreateTodo([FromBody] CreateTodoRequest request)
     {
+        if (!ModelState.IsValid) return ValidationProblem();
+        
         var user = await _userManager.GetUserAsync(User);
         if (user == null)
             return Unauthorized();
 
         var todo = new Todo
         {
-            Title = request.Title,
-            Description = request.Description,
+            Title = _htmlSanitizer.Sanitize(request.Title.Trim()),
+            Description = request.Description != null ? _htmlSanitizer.Sanitize(request.Description.Trim()) : null,
             UserId = user.Id
         };
 
@@ -79,6 +85,8 @@ public class TodosController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateTodo(int id, [FromBody] UpdateTodoRequest request)
     {
+        if (!ModelState.IsValid) return ValidationProblem();
+        
         var user = await _userManager.GetUserAsync(User);
         if (user == null)
             return Unauthorized();
@@ -89,8 +97,10 @@ public class TodosController : ControllerBase
         if (todo == null)
             return NotFound();
 
-        todo.Title = request.Title ?? todo.Title;
-        todo.Description = request.Description ?? todo.Description;
+        if (request.Title != null)
+            todo.Title = _htmlSanitizer.Sanitize(request.Title.Trim());
+        if (request.Description != null)
+            todo.Description = _htmlSanitizer.Sanitize(request.Description.Trim());
         todo.IsCompleted = request.IsCompleted ?? todo.IsCompleted;
         
         if (todo.IsCompleted && !todo.CompletedAt.HasValue)
@@ -122,17 +132,4 @@ public class TodosController : ControllerBase
 
         return NoContent();
     }
-}
-
-public class CreateTodoRequest
-{
-    public string Title { get; set; } = string.Empty;
-    public string? Description { get; set; }
-}
-
-public class UpdateTodoRequest
-{
-    public string? Title { get; set; }
-    public string? Description { get; set; }
-    public bool? IsCompleted { get; set; }
 }

@@ -5,10 +5,12 @@ const baseApiUrl = 'http://localhost:5000/api';
 const showLoginBtn = document.getElementById('showLogin');
 const showRegisterBtn = document.getElementById('showRegister');
 const showTodoBtn = document.getElementById('showTodo');
+const showProfileBtn = document.getElementById('showProfile');
 const logoutBtn = document.getElementById('logout');
 
 const loginSection = document.getElementById('loginSection');
 const registerSection = document.getElementById('registerSection');
+const profileSection = document.getElementById('profileSection');
 const todoSection = document.getElementById('todoSection');
 
 const loginForm = document.getElementById('loginForm');
@@ -18,15 +20,18 @@ const addTodoForm = document.getElementById('addTodoForm');
 const loginMessage = document.getElementById('loginMessage');
 const registerMessage = document.getElementById('registerMessage');
 const todoList = document.getElementById('todoList');
+const profileInfo = document.getElementById('profileInfo');
 
 // State
 let isAuthenticated = false;
+let userRoles = [];
 let todos = [];
 
 // Event Listeners
 showLoginBtn.addEventListener('click', () => showSection('login'));
 showRegisterBtn.addEventListener('click', () => showSection('register'));
 showTodoBtn.addEventListener('click', () => showSection('todo'));
+showProfileBtn.addEventListener('click', () => showSection('profile'));
 logoutBtn.addEventListener('click', logout);
 
 loginForm.addEventListener('submit', handleLogin);
@@ -46,6 +51,7 @@ function showSection(section) {
     // Hide all sections
     loginSection.style.display = 'none';
     registerSection.style.display = 'none';
+    profileSection.style.display = 'none';
     todoSection.style.display = 'none';
 
     // Remove active class from all nav buttons
@@ -60,6 +66,13 @@ function showSection(section) {
         case 'register':
             registerSection.style.display = 'block';
             showRegisterBtn.classList.add('active');
+            break;
+        case 'profile':
+            profileSection.style.display = 'block';
+            showProfileBtn.classList.add('active');
+            if (isAuthenticated) {
+                loadProfile();
+            }
             break;
         case 'todo':
             todoSection.style.display = 'block';
@@ -80,6 +93,7 @@ async function checkAuthStatus() {
         });
 
         if (response.ok) {
+            await loadUserProfile();
             setAuthenticated(true);
         } else {
             setAuthenticated(false);
@@ -90,23 +104,53 @@ async function checkAuthStatus() {
     }
 }
 
+async function loadUserProfile() {
+    try {
+        const response = await fetch(`${baseApiUrl}/accounts/profile`, {
+            method: 'GET',
+            credentials: 'include'
+        });
+
+        if (response.ok) {
+            const profile = await response.json();
+            userRoles = profile.roles || [];
+            return true; // Indicate successful profile load
+        }
+        return false; // Indicate failed profile load
+    } catch (error) {
+        console.error('Profile load failed:', error);
+        userRoles = [];
+        return false;
+    }
+}
+
 function setAuthenticated(authenticated) {
     isAuthenticated = authenticated;
     
     if (authenticated) {
         showLoginBtn.style.display = 'none';
-        showRegisterBtn.style.display = 'none';
         showTodoBtn.style.display = 'inline-block';
+        showProfileBtn.style.display = 'inline-block';
         logoutBtn.style.display = 'inline-block';
+        
+        // Show register button only for admins
+        if (userRoles.includes('Admin')) {
+            showRegisterBtn.style.display = 'inline-block';
+        } else {
+            showRegisterBtn.style.display = 'none';
+        }
+        
         // Only show todo section if we're not already on it
         if (todoSection.style.display === 'none') {
             showSection('todo');
         }
     } else {
         showLoginBtn.style.display = 'inline-block';
-        showRegisterBtn.style.display = 'inline-block';
+        showRegisterBtn.style.display = 'none';
         showTodoBtn.style.display = 'none';
+        showProfileBtn.style.display = 'none';
         logoutBtn.style.display = 'none';
+        userRoles = [];
         showSection('login');
     }
 }
@@ -129,7 +173,12 @@ async function handleLogin(e) {
 
         if (response.ok) {
             showMessage(loginMessage, 'Login successful!', 'success');
-            setAuthenticated(true);
+            const profileLoaded = await loadUserProfile();
+            if (profileLoaded) {
+                setAuthenticated(true);
+            } else {
+                setAuthenticated(false);
+            }
             loginForm.reset();
         } else {
             const error = await response.text();
@@ -147,11 +196,20 @@ async function handleRegister(e) {
     const firstName = document.getElementById('registerFirstName').value;
     const lastName = document.getElementById('registerLastName').value;
     const email = document.getElementById('registerEmail').value;
+    const role = document.getElementById('registerRole').value;
     const password = document.getElementById('registerPassword').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
 
     if (password !== confirmPassword) {
         showMessage(registerMessage, 'Passwords do not match.', 'error');
+        return;
+    }
+
+    // Client-side password validation
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    console.log('Password validation test:', password, 'Result:', passwordRegex.test(password));
+    if (!passwordRegex.test(password)) {
+        showMessage(registerMessage, 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)', 'error');
         return;
     }
 
@@ -166,18 +224,35 @@ async function handleRegister(e) {
                 firstName,
                 lastName,
                 email,
+                role,
                 password,
                 confirmPassword
             })
         });
 
         if (response.ok) {
-            showMessage(registerMessage, 'Account created successfully! You can now login.', 'success');
+            showMessage(registerMessage, `Account created successfully with role: ${role}!`, 'success');
             registerForm.reset();
-            showSection('login');
+            showSection('todo');
         } else {
-            const error = await response.text();
-            showMessage(registerMessage, 'Registration failed. Please try again.', 'error');
+            try {
+                const errorData = await response.json();
+                if (errorData.errors) {
+                    // Handle validation errors
+                    const errorMessages = [];
+                    for (const [field, errors] of Object.entries(errorData.errors)) {
+                        errorMessages.push(`${field}: ${errors.join(', ')}`);
+                    }
+                    showMessage(registerMessage, errorMessages.join('\n'), 'error');
+                } else if (response.status === 403) {
+                    showMessage(registerMessage, 'Access denied. Only administrators can create new accounts.', 'error');
+                } else {
+                    showMessage(registerMessage, 'Registration failed. Please try again.', 'error');
+                }
+            } catch {
+                const error = await response.text();
+                showMessage(registerMessage, 'Registration failed. Please try again.', 'error');
+            }
         }
     } catch (error) {
         console.error('Registration error:', error);
@@ -195,10 +270,34 @@ async function logout() {
         if (response.ok) {
             setAuthenticated(false);
             todos = [];
+            userRoles = [];
             showMessage(loginMessage, 'Logged out successfully.', 'success');
         }
     } catch (error) {
         console.error('Logout error:', error);
+    }
+}
+
+async function loadProfile() {
+    try {
+        const response = await fetch(`${baseApiUrl}/accounts/profile`, {
+            method: 'GET',
+            credentials: 'include'
+        });
+
+        if (response.ok) {
+            const profile = await response.json();
+            profileInfo.innerHTML = `
+                <div class="profile-details">
+                    <p><strong>Name:</strong> ${profile.firstName} ${profile.lastName}</p>
+                    <p><strong>Email:</strong> ${profile.email}</p>
+                    <p><strong>Roles:</strong> ${profile.roles.join(', ')}</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Profile load error:', error);
+        profileInfo.innerHTML = '<p>Failed to load profile information.</p>';
     }
 }
 

@@ -4,6 +4,7 @@ using Ganss.Xss;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace api.Controllers
 {
@@ -13,19 +14,19 @@ namespace api.Controllers
     {
         private readonly HtmlSanitizer _htmlSanitizer = new();
 
-
-
-        [AllowAnonymous]
+        [Authorize(Roles = "Admin")]
         [HttpPost("register")]
         public async Task<ActionResult> RegisterUser(UserRegisterViewModel model)
         {
             if (!ModelState.IsValid) return ValidationProblem();
 
+            // Sanitize inputs
             model.Email = _htmlSanitizer.Sanitize(model.Email);
             model.FirstName = _htmlSanitizer.Sanitize(model.FirstName);
             model.LastName = _htmlSanitizer.Sanitize(model.LastName);
-            model.Password = _htmlSanitizer.Sanitize(model.Password);
+            // DO NOT sanitize passwords - it breaks hashing
 
+            // Re-validate after sanitization
             ModelState.Clear();
             TryValidateModel(model);
 
@@ -41,7 +42,26 @@ namespace api.Controllers
 
             var result = await signInManager.UserManager.CreateAsync(user, model.Password);
 
-            if (result.Succeeded) return Ok();
+            if (result.Succeeded)
+            {
+                // Assign the role specified by the admin
+                var roleResult = await signInManager.UserManager.AddToRoleAsync(user, model.Role);
+                if (roleResult.Succeeded)
+                {
+                    Console.WriteLine($"Role '{model.Role}' assigned to {user.Email}: {roleResult.Succeeded}");
+                    return Ok();
+                }
+                else
+                {
+                    // If role assignment fails, delete the user and return error
+                    await signInManager.UserManager.DeleteAsync(user);
+                    foreach (var error in roleResult.Errors)
+                    {
+                        ModelState.AddModelError(error.Code, error.Description);
+                    }
+                    return ValidationProblem();
+                }
+            }
 
             foreach (var error in result.Errors)
             {
@@ -58,10 +78,10 @@ namespace api.Controllers
             if (!ModelState.IsValid) return ValidationProblem();
 
             request.Email = _htmlSanitizer.Sanitize(request.Email);
-            request.Password = _htmlSanitizer.Sanitize(request.Password);
+            // DO NOT sanitize passwords - it breaks authentication
 
             // Use persistent cookies (remember me functionality)
-            var result = await signInManager.PasswordSignInAsync(request.Email, request.Password, isPersistent: true, lockoutOnFailure: false);
+            var result = await signInManager.PasswordSignInAsync(request.Email, request.Password, isPersistent: true, lockoutOnFailure: true);
 
             if (result.Succeeded)
             {
@@ -76,6 +96,28 @@ namespace api.Controllers
         {
             await signInManager.SignOutAsync();
             return NoContent();
+        }
+
+        [Authorize]
+        [HttpGet("profile")]
+        public async Task<ActionResult> GetProfile()
+        {
+            var user = await signInManager.UserManager.GetUserAsync(User);
+            if (user == null)
+                return NotFound();
+
+            var roles = await signInManager.UserManager.GetRolesAsync(user);
+            
+            Console.WriteLine($"Profile requested for {user.Email}, roles: [{string.Join(", ", roles)}]");
+            
+            return Ok(new
+            {
+                user.Id,
+                user.FirstName,
+                user.LastName,
+                user.Email,
+                Roles = roles
+            });
         }
     }
 }

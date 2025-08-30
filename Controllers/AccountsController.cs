@@ -61,6 +61,25 @@ namespace api.Controllers
             return ValidationProblem();
         }
 
+        [AllowAnonymous]
+        [HttpPost("login")]
+        public async Task<ActionResult> Login([FromBody] LoginRequest request)
+        {
+            if (!ModelState.IsValid) return ValidationProblem();
+
+            request.Email = _htmlSanitizer.Sanitize(request.Email);
+            request.Password = _htmlSanitizer.Sanitize(request.Password);
+
+            var result = await signInManager.PasswordSignInAsync(request.Email, request.Password, false, lockoutOnFailure: false);
+
+            if (result.Succeeded)
+            {
+                return Ok();
+            }
+
+            return Unauthorized();
+        }
+
         [HttpPost("logout")]
         public async Task<ActionResult> Logout()
         {

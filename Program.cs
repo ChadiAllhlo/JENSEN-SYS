@@ -8,11 +8,7 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers(options =>
-{
-    var policy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
-    options.Filters.Add(new AuthorizeFilter(policy));
-});
+builder.Services.AddControllers();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
@@ -28,7 +24,13 @@ builder.Services.AddIdentityApiEndpoints<User>(options =>
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<AppDbContext>();
 
-builder.Services.ConfigureApplicationCookie(options => { options.Cookie.SameSite = SameSiteMode.None; });
+builder.Services.ConfigureApplicationCookie(options => 
+{ 
+    options.Cookie.SameSite = SameSiteMode.Lax; // Use Lax for better cross-origin support
+    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Allow cookies on HTTP for development
+    options.Cookie.Domain = null; // Allow cookies to be sent to different ports
+    options.Cookie.HttpOnly = false; // Allow JavaScript access for debugging
+});
 
 // ================================================================================
 // Gör inte detta i en rest baserad lösning...
@@ -38,8 +40,8 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromMinutes(20);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
-    options.Cookie.SameSite = SameSiteMode.None;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Allow cookies on HTTP for development
 });
 
 // ================================================================================
@@ -49,11 +51,13 @@ var app = builder.Build();
 
 // Pipeline
 // ================================================================================
+app.UseStaticFiles();
+
 app.UseCors(c => c
     .AllowAnyHeader()
     .AllowAnyMethod()
     .AllowCredentials()
-    .WithOrigins("http://localhost:3000", "https://localhost:3000", "http://127.0.0.1:5501", "https://127.0.0.1:5501")
+    .WithOrigins("http://localhost:3000", "https://localhost:3000", "http://127.0.0.1:5501", "https://127.0.0.1:5501", "http://127.0.0.1:5500", "https://127.0.0.1:5500", "https://localhost:5001", "http://localhost:5000")
 );
 
 // Gör inte så här!!!
@@ -62,9 +66,18 @@ app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapGroup("api").MapIdentityApi<User>();
 app.MapControllers();
 
-app.MapGroup("api").MapIdentityApi<User>();
+// Serve the SPA for non-API routes only
+app.MapFallback(context =>
+{
+    if (!context.Request.Path.StartsWithSegments("/api"))
+    {
+        context.Response.Redirect("/index.html");
+    }
+    return Task.CompletedTask;
+});
 
 // Seed dummy data...
 // ================================================================================

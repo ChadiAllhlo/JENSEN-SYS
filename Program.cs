@@ -29,22 +29,11 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.SameSite = SameSiteMode.Lax; // Use Lax for better cross-origin support
     options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Allow cookies on HTTP for development
     options.Cookie.Domain = null; // Allow cookies to be sent to different ports
-    options.Cookie.HttpOnly = false; // Allow JavaScript access for debugging
-});
-
-// ================================================================================
-// Gör inte detta i en rest baserad lösning...
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession(options =>
-{
-    options.IdleTimeout = TimeSpan.FromMinutes(20);
-    options.Cookie.HttpOnly = true;
+    options.Cookie.HttpOnly = true; // Secure: prevent XSS attacks
     options.Cookie.IsEssential = true;
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Allow cookies on HTTP for development
+    options.ExpireTimeSpan = TimeSpan.FromDays(30); // Keep user logged in for 30 days
+    options.SlidingExpiration = true; // Extend expiration on activity
 });
-
-// ================================================================================
 
 
 var app = builder.Build();
@@ -59,9 +48,6 @@ app.UseCors(c => c
     .AllowCredentials()
     .WithOrigins("http://localhost:3000", "https://localhost:3000", "http://127.0.0.1:5501", "https://127.0.0.1:5501", "http://127.0.0.1:5500", "https://127.0.0.1:5500", "https://localhost:5001", "http://localhost:5000")
 );
-
-// Gör inte så här!!!
-app.UseSession();
 
 app.UseAuthentication();
 app.UseAuthorization();

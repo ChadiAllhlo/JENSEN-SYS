@@ -43,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Navigation
 function showSection(section) {
-    console.log('Showing section:', section);
     // Hide all sections
     loginSection.style.display = 'none';
     registerSection.style.display = 'none';
@@ -63,14 +62,10 @@ function showSection(section) {
             showRegisterBtn.classList.add('active');
             break;
         case 'todo':
-            console.log('Showing todo section, isAuthenticated:', isAuthenticated);
             todoSection.style.display = 'block';
             showTodoBtn.classList.add('active');
             if (isAuthenticated) {
-                console.log('Calling loadTodos from showSection');
                 loadTodos();
-            } else {
-                console.log('Not authenticated, not loading todos');
             }
             break;
     }
@@ -96,24 +91,18 @@ async function checkAuthStatus() {
 }
 
 function setAuthenticated(authenticated) {
-    console.log('Setting authenticated to:', authenticated);
     isAuthenticated = authenticated;
     
     if (authenticated) {
-        console.log('User is authenticated - showing todo section');
         showLoginBtn.style.display = 'none';
         showRegisterBtn.style.display = 'none';
         showTodoBtn.style.display = 'inline-block';
         logoutBtn.style.display = 'inline-block';
         // Only show todo section if we're not already on it
         if (todoSection.style.display === 'none') {
-            console.log('Switching to todo section');
             showSection('todo');
-        } else {
-            console.log('Todo section already visible');
         }
     } else {
-        console.log('User is not authenticated - showing login section');
         showLoginBtn.style.display = 'inline-block';
         showRegisterBtn.style.display = 'inline-block';
         showTodoBtn.style.display = 'none';
@@ -215,25 +204,17 @@ async function logout() {
 
 // Todo functions
 async function loadTodos() {
-    console.log('Loading todos...');
-    console.log('Current cookies:', document.cookie);
     try {
         const response = await fetch(`${baseApiUrl}/todos`, {
             method: 'GET',
             credentials: 'include'
         });
-
-        console.log('Todos response status:', response.status);
         
         if (response.ok) {
             todos = await response.json();
-            console.log('Todos loaded:', todos);
             renderTodos();
         } else if (response.status === 401) {
-            console.log('Unauthorized - setting authenticated to false');
             setAuthenticated(false);
-        } else {
-            console.log('Unexpected response status:', response.status);
         }
     } catch (error) {
         console.error('Load todos error:', error);

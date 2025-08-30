@@ -13,17 +13,7 @@ namespace api.Controllers
     {
         private readonly HtmlSanitizer _htmlSanitizer = new();
 
-        // BAD LOGIN!!!
-        [HttpPost("badlogin")]
-        public ActionResult BadLogin()
-        {
-            HttpContext.Session.SetString("token", "fDJ8OJsgVAXE7JBs55vv5e2lOjeyicLMbQC70FSpzNMQod6xRfztn83r");
-            var token = HttpContext.Session.GetString("token");
-            Console.WriteLine($"TOKEN INSIDE BAD LOGIN {token}");
 
-            // return RedirectToRoute(new { controller = "Products", action = "ListAllProducts" });
-            return Ok();
-        }
 
         [AllowAnonymous]
         [HttpPost("register")]
@@ -70,7 +60,8 @@ namespace api.Controllers
             request.Email = _htmlSanitizer.Sanitize(request.Email);
             request.Password = _htmlSanitizer.Sanitize(request.Password);
 
-            var result = await signInManager.PasswordSignInAsync(request.Email, request.Password, false, lockoutOnFailure: false);
+            // Use persistent cookies (remember me functionality)
+            var result = await signInManager.PasswordSignInAsync(request.Email, request.Password, isPersistent: true, lockoutOnFailure: false);
 
             if (result.Succeeded)
             {

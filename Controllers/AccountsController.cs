@@ -13,15 +13,10 @@ namespace api.Controllers
     {
         private readonly HtmlSanitizer _htmlSanitizer = new();
 
-        // BAD LOGIN!!!
+        // BAD LOGIN!!! - disabled in JWT flow but kept for parity
         [HttpPost("badlogin")]
         public ActionResult BadLogin()
         {
-            HttpContext.Session.SetString("token", "fDJ8OJsgVAXE7JBs55vv5e2lOjeyicLMbQC70FSpzNMQod6xRfztn83r");
-            var token = HttpContext.Session.GetString("token");
-            Console.WriteLine($"TOKEN INSIDE BAD LOGIN {token}");
-
-            // return RedirectToRoute(new { controller = "Products", action = "ListAllProducts" });
             return Ok();
         }
 
@@ -62,9 +57,8 @@ namespace api.Controllers
         }
 
         [HttpPost("logout")]
-        public async Task<ActionResult> Logout()
+        public ActionResult Logout()
         {
-            await signInManager.SignOutAsync();
             return NoContent();
         }
     }

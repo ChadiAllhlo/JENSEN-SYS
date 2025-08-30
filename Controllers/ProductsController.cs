@@ -57,9 +57,6 @@ namespace api.Controllers
         [HttpGet]
         public async Task<ActionResult> ListAllProducts()
         {
-            var token = HttpContext.Session.GetString("token");
-            Console.WriteLine($"TOKEN INSIDE LISTALLPRODUCTS {token}");
-
             var products = await _context.Products.ToListAsync();
             return Ok(new { success = true, data = products });
         }

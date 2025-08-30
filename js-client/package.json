@@ -1,0 +1,32 @@
+{
+  "name": "jensen-sys-client",
+  "version": "1.0.0",
+  "description": "Frontend client for JENSEN-SYS user registration and to-do list application",
+  "main": "app.js",
+  "scripts": {
+    "start": "echo 'Frontend is served by the ASP.NET Core API. Run the API to start the application.'",
+    "dev": "echo 'Development server is handled by ASP.NET Core. Use: cd ../api && dotnet run'"
+  },
+  "keywords": [
+    "javascript",
+    "frontend",
+    "spa",
+    "user-management",
+    "todo-list"
+  ],
+  "author": "JENSEN-SYS Team",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {},
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/JENSEN-SYS.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/JENSEN-SYS/issues"
+  },
+  "homepage": "https://github.com/your-username/JENSEN-SYS#readme"
+}

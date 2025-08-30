@@ -16,11 +16,15 @@ JENSEN-SYS/
 │   ├── Program.cs         # Application entry point
 │   ├── api.csproj         # Project file
 │   ├── appsettings.json   # Configuration
-│   └── e-shop.sln         # Solution file
+│   └── appsettings.Development.json # Development settings
 ├── js-client/             # Frontend (Vanilla JavaScript)
 │   ├── index.html         # Main application page
 │   ├── app.js            # Client-side logic
-│   └── styles.css        # Application styling
+│   ├── styles.css        # Application styling
+│   ├── package.json      # Frontend metadata
+│   └── README.md         # Frontend documentation
+├── .gitignore            # Git ignore rules
+├── JENSEN-SYS.sln        # Root solution file
 └── README.md             # This file
 ```
 

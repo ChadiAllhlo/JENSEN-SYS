@@ -20,13 +20,10 @@ namespace api.Controllers
         {
             if (!ModelState.IsValid) return ValidationProblem();
 
-            // Sanitize inputs
             model.Email = _htmlSanitizer.Sanitize(model.Email);
             model.FirstName = _htmlSanitizer.Sanitize(model.FirstName);
             model.LastName = _htmlSanitizer.Sanitize(model.LastName);
-            // DO NOT sanitize passwords - it breaks hashing
 
-            // Re-validate after sanitization
             ModelState.Clear();
             TryValidateModel(model);
 
@@ -44,7 +41,6 @@ namespace api.Controllers
 
             if (result.Succeeded)
             {
-                // Assign the role specified by the admin
                 var roleResult = await signInManager.UserManager.AddToRoleAsync(user, model.Role);
                 if (roleResult.Succeeded)
                 {
@@ -53,7 +49,6 @@ namespace api.Controllers
                 }
                 else
                 {
-                    // If role assignment fails, delete the user and return error
                     await signInManager.UserManager.DeleteAsync(user);
                     foreach (var error in roleResult.Errors)
                     {
@@ -78,9 +73,7 @@ namespace api.Controllers
             if (!ModelState.IsValid) return ValidationProblem();
 
             request.Email = _htmlSanitizer.Sanitize(request.Email);
-            // DO NOT sanitize passwords - it breaks authentication
 
-            // Use persistent cookies (remember me functionality)
             var result = await signInManager.PasswordSignInAsync(request.Email, request.Password, isPersistent: true, lockoutOnFailure: true);
 
             if (result.Succeeded)

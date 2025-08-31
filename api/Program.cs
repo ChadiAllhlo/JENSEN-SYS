@@ -10,10 +10,8 @@ using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers();
 
-// Configure request size limits
 builder.Services.Configure<IISServerOptions>(options =>
 {
     options.MaxRequestBodySize = 10 * 1024 * 1024; // 10MB limit
@@ -31,10 +29,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddCors();
 
-// Add enhanced rate limiting
 builder.Services.AddRateLimiter(options =>
 {
-    // Global rate limiter
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
         RateLimitPartition.GetFixedWindowLimiter("GlobalLimiter",
             partition => new FixedWindowRateLimiterOptions
@@ -49,7 +45,6 @@ builder.Services.AddIdentityApiEndpoints<User>(options =>
 {
     options.User.RequireUniqueEmail = true;
     
-    // Password requirements
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireNonAlphanumeric = true;
@@ -57,7 +52,6 @@ builder.Services.AddIdentityApiEndpoints<User>(options =>
     options.Password.RequiredLength = 8;
     options.Password.RequiredUniqueChars = 1;
     
-    // Lockout settings
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.AllowedForNewUsers = true;
@@ -67,15 +61,15 @@ builder.Services.AddIdentityApiEndpoints<User>(options =>
 
 builder.Services.ConfigureApplicationCookie(options => 
 { 
-    options.Cookie.SameSite = SameSiteMode.Lax; // Use Lax for better cross-origin support
+    options.Cookie.SameSite = SameSiteMode.Lax;
     options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() 
         ? CookieSecurePolicy.None 
-        : CookieSecurePolicy.Always; // Secure in production
-    options.Cookie.Domain = null; // Allow cookies to be sent to different ports
-    options.Cookie.HttpOnly = true; // Secure: prevent XSS attacks
+        : CookieSecurePolicy.Always;
+    options.Cookie.Domain = null;
+    options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
-    options.ExpireTimeSpan = TimeSpan.FromDays(30); // Keep user logged in for 30 days
-    options.SlidingExpiration = true; // Extend expiration on activity
+    options.ExpireTimeSpan = TimeSpan.FromDays(30);
+    options.SlidingExpiration = true;
 });
 
 
@@ -84,10 +78,9 @@ var app = builder.Build();
 // Pipeline
 // ================================================================================
 
-// Add enhanced security headers
+
 app.Use(async (context, next) =>
 {
-    // Content Security Policy (Enhanced)
     context.Response.Headers["Content-Security-Policy"] = 
         "default-src 'self'; " +
         "script-src 'self' 'unsafe-inline'; " +
@@ -100,23 +93,17 @@ app.Use(async (context, next) =>
         "form-action 'self'; " +
         "upgrade-insecure-requests;";
 
-    // X-Content-Type-Options
     context.Response.Headers["X-Content-Type-Options"] = "nosniff";
     
-    // X-Frame-Options
     context.Response.Headers["X-Frame-Options"] = "DENY";
     
-    // X-XSS-Protection
     context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
     
-    // Referrer Policy
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
     
-    // Permissions Policy (Enhanced)
     context.Response.Headers["Permissions-Policy"] = 
         "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=()";
     
-    // Additional Security Headers
     context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
     context.Response.Headers["X-Permitted-Cross-Domain-Policies"] = "none";
 
@@ -140,13 +127,12 @@ app.UseCors(c => c
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Enable rate limiting
 app.UseRateLimiter();
 
 app.MapGroup("api").MapIdentityApi<User>();
 app.MapControllers();
 
-// Serve the SPA for non-API routes only
+
 app.MapFallback(context =>
 {
     if (!context.Request.Path.StartsWithSegments("/api"))

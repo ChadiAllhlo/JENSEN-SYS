@@ -25,7 +25,6 @@ public class TodosController : ControllerBase
         _userManager = userManager;
     }
 
-    // GET: api/todos
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Todo>>> GetTodos()
     {
@@ -41,7 +40,6 @@ public class TodosController : ControllerBase
         return Ok(todos);
     }
 
-    // GET: api/todos/5
     [HttpGet("{id}")]
     public async Task<ActionResult<Todo>> GetTodo(int id)
     {
@@ -58,7 +56,6 @@ public class TodosController : ControllerBase
         return Ok(todo);
     }
 
-    // POST: api/todos
     [HttpPost]
     public async Task<ActionResult<Todo>> CreateTodo([FromBody] CreateTodoRequest request)
     {
@@ -81,7 +78,6 @@ public class TodosController : ControllerBase
         return CreatedAtAction(nameof(GetTodo), new { id = todo.Id }, todo);
     }
 
-    // PUT: api/todos/5
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateTodo(int id, [FromBody] UpdateTodoRequest request)
     {
@@ -112,8 +108,7 @@ public class TodosController : ControllerBase
 
         return NoContent();
     }
-
-    // DELETE: api/todos/5
+    
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTodo(int id)
     {

@@ -7,7 +7,6 @@ public class InitializeDb
 {
     public static async Task SeedData(AppDbContext context, UserManager<User> userManager, RoleManager<IdentityRole> roleManager)
     {
-        // Create roles if they don't exist
         if (!roleManager.Roles.Any())
         {
             var adminRole = new IdentityRole("Admin");
@@ -34,7 +33,6 @@ public class InitializeDb
                 var result = await userManager.CreateAsync(user, "Pa$$w0rd");
                 if (result.Succeeded)
                 {
-                    // Assign Admin role to the first user (Michael)
                     if (user.Email == "michael@gmail.com")
                     {
                         var roleResult = await userManager.AddToRoleAsync(user, "Admin");
